@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prenotatore lezioni UniPi
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      1.0
 // @description  Prenota le lezioni in presenza dell'Università di Pisa sul portale Agenda Didattica
 // @author       Alessandro Antonelli
 // @match        https://agendadidattica.unipi.it/*
@@ -11,7 +11,7 @@
 // ==/UserScript==
 // Source code repository: https://github.com/alessandro-antonelli/prenotatore-lezioni-unipi
 
-const versione = '0.9';
+const versione = '1.0';
 
 var OraUltimoControllo;
 var ElencoLezioni = [];
@@ -34,7 +34,7 @@ const SuonoNuovaLezionePubblicata = 'data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAA
 {
 	'use strict';
 	
-	if(VerificaCaricamentoPagina() == -1) return;
+	if(VerificaURL() == -1) return;
 	InstallaNeutralizzatoreAlert();
 	CaricaUI();
 	CaricaImpostazioni();
@@ -44,7 +44,7 @@ const SuonoNuovaLezionePubblicata = 'data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAA
 	await EseguiPrenotazioni();
 })();
 
-function VerificaCaricamentoPagina()
+function VerificaURL()
 {
 	const UrlAttuale = window.location.href;
 	const UrlBaseIT = 'https://agendadidattica.unipi.it/';
@@ -58,65 +58,65 @@ function VerificaCaricamentoPagina()
 
 function InstallaNeutralizzatoreAlert()
 {
-    var disablerFunction = function ()
-    {
-        window.alert = async function alert(msg) //Funzione che sovrascrive gli ALERT
-        {
-            if(msg == null) return;
+	var disablerFunction = function ()
+	{
+		window.alert = async function alert(msg) //Funzione che sovrascrive gli ALERT
+		{
+			if(msg == null) return;
 
-            var elemento = document.createElement('div');
-            elemento.style.margin = '5px auto 5px auto';
-            elemento.style.transitionDuration = '4s';
+			var elemento = document.createElement('div');
+			elemento.style.margin = '5px auto 5px auto';
+			elemento.style.transitionDuration = '4s';
 
-            var contenuto = document.createElement('span');
-            contenuto.innerHTML = '⚠️ Agenda Didattica dice:<br/><b>' + msg + '</b>';
-            contenuto.style.display = 'inline-block';
-            contenuto.style.border = '3px solid gold';
-            contenuto.style.backgroundColor = 'yellow';
-            contenuto.style.borderRadius = '10px';
-            contenuto.style.padding = '5px';
+			var contenuto = document.createElement('span');
+			contenuto.innerHTML = '⚠️ Agenda Didattica dice:<br/><b>' + msg + '</b>';
+			contenuto.style.display = 'inline-block';
+			contenuto.style.border = '3px solid gold';
+			contenuto.style.backgroundColor = 'yellow';
+			contenuto.style.borderRadius = '10px';
+			contenuto.style.padding = '5px';
 
-            elemento.appendChild(contenuto);
-            document.getElementById('ContenitoreAlert').appendChild(elemento);
+			elemento.appendChild(contenuto);
+			document.getElementById('ContenitoreAlert').appendChild(elemento);
 
-            await new Promise(resolve => setTimeout(resolve, 8000));
-            elemento.style.opacity = '0';
-            await new Promise(resolve => setTimeout(resolve, 4000));
-            elemento.remove();
-        };
+			await new Promise(resolve => setTimeout(resolve, 8000));
+			elemento.style.opacity = '0';
+			await new Promise(resolve => setTimeout(resolve, 4000));
+			elemento.remove();
+		};
 
-        window.confirm = async function confirm(msg) //Funzione che sovrascrive i CONFIRM
-        {
-            if(msg == null) return true;
+		window.confirm = async function confirm(msg) //Funzione che sovrascrive i CONFIRM
+		{
+			if(msg == null) return true;
 
-            var elemento = document.createElement('div');
-            elemento.style.margin = '5px auto 5px auto';
-            elemento.style.transitionDuration = '4s';
+			var elemento = document.createElement('div');
+			elemento.style.margin = '5px auto 5px auto';
+			elemento.style.transitionDuration = '4s';
 
-            var contenuto = document.createElement('span');
-            contenuto.innerHTML = '⚠️ Agenda Didattica ha chiesto:<br/><b>' + msg + '</b><br/>il Prenotatore ha risposto: <b>sì</b>';
-            contenuto.style.display = 'inline-block';
-            contenuto.style.border = '3px solid gold';
-            contenuto.style.backgroundColor = 'yellow';
-            contenuto.style.borderRadius = '10px';
-            contenuto.style.padding = '5px';
+			var contenuto = document.createElement('span');
+			contenuto.innerHTML = '⚠️ Agenda Didattica ha chiesto:<br/><b>' + msg + '</b><br/>il Prenotatore ha risposto: <b>sì</b>';
+			contenuto.style.display = 'inline-block';
+			contenuto.style.border = '3px solid gold';
+			contenuto.style.backgroundColor = 'yellow';
+			contenuto.style.borderRadius = '10px';
+			contenuto.style.padding = '5px';
 
-            elemento.appendChild(contenuto);
-            document.getElementById('ContenitoreAlert').appendChild(elemento);
+			elemento.appendChild(contenuto);
+			document.getElementById('ContenitoreAlert').appendChild(elemento);
 
 			setTimeout( function(){ elemento.style.opacity = '0'; }, 8000);
-            setTimeout( function(){ elemento.remove(); }, 12000);
+			setTimeout( function(){ elemento.remove(); }, 12000);
 
 			return true; // Simula il click sul pulsante "sì" da parte dell'utente
-        };
-    };
+		};
+	};
 	var disablerCode = "(" + disablerFunction.toString() + ")();";
 
-    var disablerScriptElement = document.createElement('script');
-    disablerScriptElement.textContent = disablerCode;
+	var disablerScriptElement = document.createElement('script');
+	disablerScriptElement.textContent = disablerCode;
 
-    document.documentElement.appendChild(disablerScriptElement);
-    disablerScriptElement.parentNode.removeChild(disablerScriptElement);
+	document.documentElement.appendChild(disablerScriptElement);
+	disablerScriptElement.parentNode.removeChild(disablerScriptElement);
 }
 
 function CaricaUI()
@@ -242,11 +242,43 @@ function CaricaUI()
 	ContenitoreAlert.style.width = '100%';
 	ContenitoreAlert.style.fontSize = '130%';
 	ContenitoreAlert.style.textAlign = 'center';
-	ContenitoreAlert.style.zIndex = '10';
+	ContenitoreAlert.style.zIndex = '1100';
 	document.body.append(ContenitoreAlert);
 
 	CambiamentoVisibilitàPagina();
-    document.addEventListener('visibilitychange', CambiamentoVisibilitàPagina, false);
+	document.addEventListener('visibilitychange', CambiamentoVisibilitàPagina, false);
+
+	// Installo gli handler necessari per il riconoscimento della prenotazione manuale
+	InstallaHandlerFinestraModale();
+	var BottoniVista = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(3) > div"); //bottoni "Settimana/Giorno/Agenda"
+	BottoniVista.addEventListener('click', InstallaHandlerFinestraModale);
+}
+
+function InstallaHandlerFinestraModale()
+//viene eseguito al click sui bottoni Settimana/Giorno/Agenda
+{
+	document.querySelector('#calendar > div.fc-view-harness.fc-view-harness-passive').addEventListener('click', AggiungiHandlerPrenotazioneManuale);
+}
+
+async function AggiungiHandlerPrenotazioneManuale()
+//eseguito all'apertura manuale della finestra modale
+{
+	await sleep(200);
+	var PulsantePrenota = document.getElementById('AddBook');
+	var PulsanteRimuoviPrenotazione = document.getElementById('UnBook');
+	
+	if(PulsantePrenota != null) PulsantePrenota.addEventListener('click', RiconosciPrenotazioneManuale);
+	if(PulsanteRimuoviPrenotazione != null) PulsanteRimuoviPrenotazione.addEventListener('click', RiconosciPrenotazioneManuale);
+}
+
+async function RiconosciPrenotazioneManuale()
+// Se l'utente clicca sui bottoni rossi (effettuando/togliendo manualmente una prenotazione), triggero aggiornamento della lista delle lezioni nella UI
+{
+	if(RiconoscimentoClickManuali)
+	{
+		await sleep(1000);
+		ElencaLezioni();
+	}
 }
 
 function CaricaImpostazioni()
@@ -262,7 +294,7 @@ function CaricaImpostazioni()
 
 async function ElencaLezioni()
 {
-	var BottoneLista = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(3) > div > button.fc-listWeek-button.fc-button.fc-button-primary.fc-button-active");
+	var BottoneLista = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(3) > div > button.fc-listWeek-button.fc-button.fc-button-primary");
 	await BottoneLista.click();
 	var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
 	var BottoneOggi = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > button");
@@ -400,213 +432,213 @@ async function EseguiPrenotazioni()
 {
 	var ElencoPrenotazioniNecessarie = [];
 
-    for(var i=0; i < ElencoLezioni.length; i++)
-    {
-        if(ElencoLezioni[i].prenotare && !ElencoLezioni[i].prenotato && !ElencoLezioni[i].pieno)
-            { ElencoPrenotazioniNecessarie.push(i); }
-    }
-    ElencoPrenotazioniNecessarie.sort(OrdinamentoPerTentativoPiùLontano);
+	for(var i=0; i < ElencoLezioni.length; i++)
+	{
+		if(ElencoLezioni[i].prenotare && !ElencoLezioni[i].prenotato && !ElencoLezioni[i].pieno)
+			{ ElencoPrenotazioniNecessarie.push(i); }
+	}
+	ElencoPrenotazioniNecessarie.sort(OrdinamentoPerTentativoPiùLontano);
 
-    RiconoscimentoClickManuali = false;
-    for(i=0; i < ElencoPrenotazioniNecessarie.length; i++)
-    {
-        await Prenota(ElencoPrenotazioniNecessarie[i]);
-        await sleep(500); //aspetto mezzo secondo tra un click e l'altro, per evitare errori
-    }
-    RiconoscimentoClickManuali = true;
+	RiconoscimentoClickManuali = false;
+	for(i=0; i < ElencoPrenotazioniNecessarie.length; i++)
+	{
+		await Prenota(ElencoPrenotazioniNecessarie[i]);
+		await sleep(500); //aspetto mezzo secondo tra un click e l'altro, per evitare errori
+	}
+	RiconoscimentoClickManuali = true;
 }
 
 function OrdinamentoPerTentativoPiùLontano(a, b)
 {
-    const dataA = ElencoLezioni[a].dataUltimoTentativo;
-    const dataB = ElencoLezioni[b].dataUltimoTentativo;
+	const dataA = ElencoLezioni[a].dataUltimoTentativo;
+	const dataB = ElencoLezioni[b].dataUltimoTentativo;
 
-    if(dataA == null) return -1;
-    else if(dataB == null) return 1;
-    else return (new Date(dataA)).getTime() - (new Date(dataB)).getTime();
+	if(dataA == null) return -1;
+	else if(dataB == null) return 1;
+	else return (new Date(dataA)).getTime() - (new Date(dataB)).getTime();
 }
 
 async function Prenota(indice)
 {
-    PrenotazioniInCorso++;
-    const ThrobberPrenotazione = '<img alt="attendi..." style="object-fit: cover; height: 25px; width: 40px" height="40" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOiBhdXRvOyBiYWNrZ3JvdW5kOiBub25lOyBkaXNwbGF5OiBibG9jazsgc2hhcGUtcmVuZGVyaW5nOiBhdXRvOyIgd2lkdGg9IjI4MHB4IiBoZWlnaHQ9IjI4MHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPgo8cmVjdCB4PSIxNy41IiB5PSIyOC41IiB3aWR0aD0iMTUiIGhlaWdodD0iNDMiIGZpbGw9IiNhOWE5YTkiPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9InkiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBkdXI9IjFzIiBjYWxjTW9kZT0ic3BsaW5lIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxMy40NDk5OTk5OTk5OTk5OTY7MjguNTsyOC41IiBrZXlTcGxpbmVzPSIwIDAuNSAwLjUgMTswIDAuNSAwLjUgMSIgYmVnaW49Ii0wLjJzIj48L2FuaW1hdGU+CiAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iaGVpZ2h0IiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgZHVyPSIxcyIgY2FsY01vZGU9InNwbGluZSIga2V5VGltZXM9IjA7MC41OzEiIHZhbHVlcz0iNzMuMTAwMDAwMDAwMDAwMDE7NDM7NDMiIGtleVNwbGluZXM9IjAgMC41IDAuNSAxOzAgMC41IDAuNSAxIiBiZWdpbj0iLTAuMnMiPjwvYW5pbWF0ZT4KPC9yZWN0Pgo8cmVjdCB4PSI0Mi41IiB5PSIyOC41IiB3aWR0aD0iMTUiIGhlaWdodD0iNDMiIGZpbGw9IiNmZmQ3MDAiPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9InkiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBkdXI9IjFzIiBjYWxjTW9kZT0ic3BsaW5lIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxNy4yMTI1OzI4LjU7MjguNSIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiIGJlZ2luPSItMC4xcyI+PC9hbmltYXRlPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9ImhlaWdodCIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjY1LjU3NTs0Mzs0MyIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiIGJlZ2luPSItMC4xcyI+PC9hbmltYXRlPgo8L3JlY3Q+CjxyZWN0IHg9IjY3LjUiIHk9IjI4LjUiIHdpZHRoPSIxNSIgaGVpZ2h0PSI0MyIgZmlsbD0iIzM3ODhkOCI+CiAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ieSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjE3LjIxMjU7MjguNTsyOC41IiBrZXlTcGxpbmVzPSIwIDAuNSAwLjUgMTswIDAuNSAwLjUgMSI+PC9hbmltYXRlPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9ImhlaWdodCIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjY1LjU3NTs0Mzs0MyIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiPjwvYW5pbWF0ZT4KPC9yZWN0Pgo8IS0tIFtsZGlvXSBnZW5lcmF0ZWQgYnkgaHR0cHM6Ly9sb2FkaW5nLmlvLyAtLT48L3N2Zz4=" />';
-    var OrarioSintetico = ElencoLezioni[indice].ora.replace(' - ', '-');
-    OrarioSintetico = OrarioSintetico.replace(':00', ''); OrarioSintetico = OrarioSintetico.replace(':00', '');
-    Attività(ThrobberPrenotazione + ' 🖱️Cerco di prenotare lo slot ' + ElencoLezioni[indice].data.getDate() + ' ' + DaNumeroANomeMese(ElencoLezioni[indice].data.getMonth(), false) + ' ' + OrarioSintetico);
+	PrenotazioniInCorso++;
+	const ThrobberPrenotazione = '<img alt="attendi..." style="object-fit: cover; height: 25px; width: 40px" height="40" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOiBhdXRvOyBiYWNrZ3JvdW5kOiBub25lOyBkaXNwbGF5OiBibG9jazsgc2hhcGUtcmVuZGVyaW5nOiBhdXRvOyIgd2lkdGg9IjI4MHB4IiBoZWlnaHQ9IjI4MHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPgo8cmVjdCB4PSIxNy41IiB5PSIyOC41IiB3aWR0aD0iMTUiIGhlaWdodD0iNDMiIGZpbGw9IiNhOWE5YTkiPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9InkiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBkdXI9IjFzIiBjYWxjTW9kZT0ic3BsaW5lIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxMy40NDk5OTk5OTk5OTk5OTY7MjguNTsyOC41IiBrZXlTcGxpbmVzPSIwIDAuNSAwLjUgMTswIDAuNSAwLjUgMSIgYmVnaW49Ii0wLjJzIj48L2FuaW1hdGU+CiAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iaGVpZ2h0IiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgZHVyPSIxcyIgY2FsY01vZGU9InNwbGluZSIga2V5VGltZXM9IjA7MC41OzEiIHZhbHVlcz0iNzMuMTAwMDAwMDAwMDAwMDE7NDM7NDMiIGtleVNwbGluZXM9IjAgMC41IDAuNSAxOzAgMC41IDAuNSAxIiBiZWdpbj0iLTAuMnMiPjwvYW5pbWF0ZT4KPC9yZWN0Pgo8cmVjdCB4PSI0Mi41IiB5PSIyOC41IiB3aWR0aD0iMTUiIGhlaWdodD0iNDMiIGZpbGw9IiNmZmQ3MDAiPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9InkiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBkdXI9IjFzIiBjYWxjTW9kZT0ic3BsaW5lIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxNy4yMTI1OzI4LjU7MjguNSIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiIGJlZ2luPSItMC4xcyI+PC9hbmltYXRlPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9ImhlaWdodCIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjY1LjU3NTs0Mzs0MyIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiIGJlZ2luPSItMC4xcyI+PC9hbmltYXRlPgo8L3JlY3Q+CjxyZWN0IHg9IjY3LjUiIHk9IjI4LjUiIHdpZHRoPSIxNSIgaGVpZ2h0PSI0MyIgZmlsbD0iIzM3ODhkOCI+CiAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ieSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjE3LjIxMjU7MjguNTsyOC41IiBrZXlTcGxpbmVzPSIwIDAuNSAwLjUgMTswIDAuNSAwLjUgMSI+PC9hbmltYXRlPgogIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9ImhlaWdodCIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVRpbWVzPSIwOzAuNTsxIiB2YWx1ZXM9IjY1LjU3NTs0Mzs0MyIga2V5U3BsaW5lcz0iMCAwLjUgMC41IDE7MCAwLjUgMC41IDEiPjwvYW5pbWF0ZT4KPC9yZWN0Pgo8IS0tIFtsZGlvXSBnZW5lcmF0ZWQgYnkgaHR0cHM6Ly9sb2FkaW5nLmlvLyAtLT48L3N2Zz4=" />';
+	var OrarioSintetico = ElencoLezioni[indice].ora.replace(' - ', '-');
+	OrarioSintetico = OrarioSintetico.replace(':00', ''); OrarioSintetico = OrarioSintetico.replace(':00', '');
+	Attività(ThrobberPrenotazione + ' 🖱️Cerco di prenotare lo slot ' + ElencoLezioni[indice].data.getDate() + ' ' + DaNumeroANomeMese(ElencoLezioni[indice].data.getMonth(), false) + ' ' + OrarioSintetico);
 
-    //Mi sposto alla settimana che contiene lo slot da prenotare
-    await SpostatiAllaSettimanaGiusta(ElencoLezioni[indice].data);
+	//Mi sposto alla settimana che contiene lo slot da prenotare
+	await SpostatiAllaSettimanaGiusta(ElencoLezioni[indice].data);
 
-    var elemento = RestituisciElementoLezione(ElencoLezioni[indice].numRiga);
-    if(elemento == null) {
-        console.error('Elemento null tentando di prenotare ' + ElencoLezioni[indice].data);
-        PrenotazioniInCorso--;
-        return;
-    }
+	var elemento = RestituisciElementoLezione(ElencoLezioni[indice].numRiga);
+	if(elemento == null) {
+		console.error('Elemento null tentando di prenotare ' + ElencoLezioni[indice].data);
+		PrenotazioniInCorso--;
+		return;
+	}
 
-    const TimestampClick = (new Date()).getTime();
-    ElencoLezioni[indice].dataUltimoTentativo = new Date();
-    localStorage.setItem('ElencoLezioni', JSON.stringify(ElencoLezioni));
+	const TimestampClick = (new Date()).getTime();
+	ElencoLezioni[indice].dataUltimoTentativo = new Date();
+	localStorage.setItem('ElencoLezioni', JSON.stringify(ElencoLezioni));
 
-    await elemento.click(); //apre la finestra modale
+	await elemento.click(); //apre la finestra modale
 	await sleep(200);
 	var PulsantePrenota = document.getElementById('AddBook');
 	if(PulsantePrenota == null)
 		{ await RicaricaPagina('Prenotazione non riuscita'); return; }
 	PulsantePrenota.click(); //clicca su "prenota"
 
-    // Attendo e verifico che la prenotazione sia stata registrata sul sito Agende
+	// Attendo e verifico che la prenotazione sia stata registrata sul sito Agende
 	const verde = 'rgb(40, 167, 69)';
-    while(true)
-    {
-        elemento = RestituisciElementoLezione(ElencoLezioni[indice].numRiga);
-        if(elemento == null) {
-            console.error('Elemento null verificando la prenotazione di ' + ElencoLezioni[indice].data);
-            break;
-        }
+	while(true)
+	{
+		elemento = RestituisciElementoLezione(ElencoLezioni[indice].numRiga);
+		if(elemento == null) {
+			console.error('Elemento null verificando la prenotazione di ' + ElencoLezioni[indice].data);
+			break;
+		}
 		const ColorePallino = elemento.querySelector('td.fc-list-event-graphic > span').style.borderColor;
-        if(ColorePallino == verde) //Prenotazione riuscita!
-        {
+		if(ColorePallino == verde) //Prenotazione riuscita!
+		{
 			// Chiudo la finestra modale
 			var BottoneChiudi = document.querySelector('#createEventModal > div > div > div.modal-header > button');
 			if(BottoneChiudi != null) BottoneChiudi.click();
 
-            // Registro nel local storage
-            ElencoLezioni[indice].prenotato = true;
-            ElencoLezioni[indice].dataPrenotazione = new Date();
-            ElencoLezioni[indice].prenotare = false;
-            localStorage.setItem('ElencoLezioni', JSON.stringify(ElencoLezioni));
+			// Registro nel local storage
+			ElencoLezioni[indice].prenotato = true;
+			ElencoLezioni[indice].dataPrenotazione = new Date();
+			ElencoLezioni[indice].prenotare = false;
+			localStorage.setItem('ElencoLezioni', JSON.stringify(ElencoLezioni));
 
-            ElencaLezioni(); //Aggiorno lista lezioni nella UI
+			ElencaLezioni(); //Aggiorno lista lezioni nella UI
 
-            CalcolaProssimoRiavvio(); //Aggiorno data del prossimo riavvio
+			CalcolaProssimoRiavvio(); //Aggiorno data del prossimo riavvio
 
-            // Avviso acustico
-            var suono = new Audio(SuonoPrenotazioneFatta);
-            suono.play();
-            break;
-        }
-        await sleep(500);
+			// Avviso acustico
+			var suono = new Audio(SuonoPrenotazioneFatta);
+			suono.play();
+			break;
+		}
+		await sleep(500);
 
-        const MsPassati = (new Date()).getTime() - TimestampClick;
-        if(MsPassati > 10000)
-        {
-            if(ElencoLezioni[indice].prenotare)
-                { await RicaricaPagina('Prenotazione non riuscita'); break; }
-            else break; //Se durante l'attesa e verifica l'utente ha rimosso il suo interesse verso lo slot, non c'è bisogno di refreshare per ritentare
-        }
-    }
-    PrenotazioniInCorso--;
+		const MsPassati = (new Date()).getTime() - TimestampClick;
+		if(MsPassati > 10000)
+		{
+			if(ElencoLezioni[indice].prenotare)
+				{ await RicaricaPagina('Prenotazione non riuscita'); break; }
+			else break; //Se durante l'attesa e verifica l'utente ha rimosso il suo interesse verso lo slot, non c'è bisogno di refreshare per ritentare
+		}
+	}
+	PrenotazioniInCorso--;
 }
 
 function CalcolaProssimoRiavvio()
 {
 	var HoQualcosaDaFare;
-    if(localStorage.getItem('PrenotaNuoveLezioni') == 'true') HoQualcosaDaFare = true;
-    else
-    {
-        HoQualcosaDaFare = false;
-        for(var i=0; i < ElencoLezioni.length; i++)
-        {
-            if(ElencoLezioni[i].prenotare && !ElencoLezioni[i].prenotato) { HoQualcosaDaFare = true; break; }
-        }
-    }
+	if(localStorage.getItem('PrenotaNuoveLezioni') == 'true') HoQualcosaDaFare = true;
+	else
+	{
+		HoQualcosaDaFare = false;
+		for(var i=0; i < ElencoLezioni.length; i++)
+		{
+			if(ElencoLezioni[i].prenotare && !ElencoLezioni[i].prenotato) { HoQualcosaDaFare = true; break; }
+		}
+	}
 
-    if(!HoQualcosaDaFare)
-    {
-        TimestampProssimoRiavvio = null;
+	if(!HoQualcosaDaFare)
+	{
+		TimestampProssimoRiavvio = null;
 
-        // Aggiorno UI
-        document.getElementById('ON').style.display = 'none';
-        document.getElementById('OFF').style.display = 'block';
-        document.title = document.title.replace('⚡', '');
-        Attività('Nessun ordine inserito');
+		// Aggiorno UI
+		document.getElementById('ON').style.display = 'none';
+		document.getElementById('OFF').style.display = 'block';
+		document.title = document.title.replace('⚡', '');
+		Attività('Nessun ordine inserito');
 
-        // Cancello timer
-        if(TimerProssimoRiavvio != null) { clearTimeout(TimerProssimoRiavvio); TimerProssimoRiavvio = null; }
-        if(TimerTieniAggiornataDataRiavvio != null) { clearTimeout(TimerTieniAggiornataDataRiavvio); TimerTieniAggiornataDataRiavvio = null; }
-        if(TimerAggiornaCountdown != null) { clearTimeout(TimerAggiornaCountdown); TimerAggiornaCountdown = null; }
-    }
-    else
-    {
-        // Aggiorno UI
-        if(document.getElementById('ON').style.display == 'none')
-        {
-            document.title = '⚡' + document.title;
-            document.getElementById('ON').style.display = 'block';
-            document.getElementById('OFF').style.display = 'none';
-        }
+		// Cancello timer
+		if(TimerProssimoRiavvio != null) { clearTimeout(TimerProssimoRiavvio); TimerProssimoRiavvio = null; }
+		if(TimerTieniAggiornataDataRiavvio != null) { clearTimeout(TimerTieniAggiornataDataRiavvio); TimerTieniAggiornataDataRiavvio = null; }
+		if(TimerAggiornaCountdown != null) { clearTimeout(TimerAggiornaCountdown); TimerAggiornaCountdown = null; }
+	}
+	else
+	{
+		// Aggiorno UI
+		if(document.getElementById('ON').style.display == 'none')
+		{
+			document.title = '⚡' + document.title;
+			document.getElementById('ON').style.display = 'block';
+			document.getElementById('OFF').style.display = 'none';
+		}
 
-        // Calcolo quanto manca; se già passato, eseguo riavvio
-        const frequenzaMs = GetFrequenzaControlliMinuti() * 60000;
-        TimestampProssimoRiavvio = OraUltimoControllo.getTime() + frequenzaMs;
-        const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
+		// Calcolo quanto manca; se già passato, eseguo riavvio
+		const frequenzaMs = GetFrequenzaControlliMinuti() * 60000;
+		TimestampProssimoRiavvio = OraUltimoControllo.getTime() + frequenzaMs;
+		const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
 
-        if(MsMancanti < 0) { RicaricaPagina('Devo eseguire un nuovo controllo'); return; }
+		if(MsMancanti < 0) { RicaricaPagina('Devo eseguire un nuovo controllo'); return; }
 
-        // Aggiorno attività in corso nella UI, e imposto il suo aggiornamento periodico
-        AttivaCountdownRefresh();
+		// Aggiorno attività in corso nella UI, e imposto il suo aggiornamento periodico
+		AttivaCountdownRefresh();
 
-        // Imposto timer (sovrascrivendoli se già esistenti)
-        if(TimerProssimoRiavvio != null) clearTimeout(TimerProssimoRiavvio);
-        TimerProssimoRiavvio = setTimeout(RicaricaPagina.bind(null, 'Devo eseguire un nuovo controllo'), MsMancanti);
+		// Imposto timer (sovrascrivendoli se già esistenti)
+		if(TimerProssimoRiavvio != null) clearTimeout(TimerProssimoRiavvio);
+		TimerProssimoRiavvio = setTimeout(RicaricaPagina.bind(null, 'Devo eseguire un nuovo controllo'), MsMancanti);
 
-        if(TimerTieniAggiornataDataRiavvio != null) clearTimeout(TimerTieniAggiornataDataRiavvio);
-        TimerTieniAggiornataDataRiavvio = setInterval(CalcolaProssimoRiavvio, 60000);
-    }
+		if(TimerTieniAggiornataDataRiavvio != null) clearTimeout(TimerTieniAggiornataDataRiavvio);
+		TimerTieniAggiornataDataRiavvio = setInterval(CalcolaProssimoRiavvio, 60000);
+	}
 }
 
 function AttivaCountdownRefresh()
 {
-    const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
-    Attività('Attendo prossimo aggiornamento pagina (tra ' + FormattaLassoTempo(MsMancanti) + ')');
+	const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
+	Attività('Attendo prossimo aggiornamento pagina (tra ' + FormattaLassoTempo(MsMancanti) + ')');
 
-    //Adatto l'intervallo di aggiornamento dell'attività in corso in base a quanto manca
-    var IntervCountdownUI;
-    if(MsMancanti < 315000) IntervCountdownUI = 1000; //vengono visualizzati i secondi: necessario aggiornare ogni secondo
-    else if(MsMancanti < 600000) IntervCountdownUI = 15000; //vengono visualizzati solo i minuti, posso aggiornare meno spesso
-    else IntervCountdownUI = 60000; //vengono visualizzati solo i minuti, posso aggiornare meno spesso
+	//Adatto l'intervallo di aggiornamento dell'attività in corso in base a quanto manca
+	var IntervCountdownUI;
+	if(MsMancanti < 315000) IntervCountdownUI = 1000; //vengono visualizzati i secondi: necessario aggiornare ogni secondo
+	else if(MsMancanti < 600000) IntervCountdownUI = 15000; //vengono visualizzati solo i minuti, posso aggiornare meno spesso
+	else IntervCountdownUI = 60000; //vengono visualizzati solo i minuti, posso aggiornare meno spesso
 
-    if(TimerAggiornaCountdown != null) clearTimeout(TimerAggiornaCountdown);
-    TimerAggiornaCountdown = setInterval(AggiornaCountdown, IntervCountdownUI);
+	if(TimerAggiornaCountdown != null) clearTimeout(TimerAggiornaCountdown);
+	TimerAggiornaCountdown = setInterval(AggiornaCountdown, IntervCountdownUI);
 }
 
 function AggiornaCountdown()
 {
-    if(PrenotazioniInCorso > 0) return;
-    const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
-    const MsMancantiFormattati = MsMancanti >= 10000 ? FormattaLassoTempo(MsMancanti) : '<b>' + FormattaLassoTempo(MsMancanti) + '</b>';
-    if(MsMancanti > 0) Attività('Attendo prossimo aggiornamento pagina (tra ' + MsMancantiFormattati + ')');
+	if(PrenotazioniInCorso > 0) return;
+	const MsMancanti = TimestampProssimoRiavvio - (new Date()).getTime();
+	const MsMancantiFormattati = MsMancanti >= 10000 ? FormattaLassoTempo(MsMancanti) : '<b>' + FormattaLassoTempo(MsMancanti) + '</b>';
+	if(MsMancanti > 0) Attività('Attendo prossimo aggiornamento pagina (tra ' + MsMancantiFormattati + ')');
 }
 
 function Attività(stringa)
 {
-    var elem = document.getElementById('attività');
-    if(elem != null) elem.innerHTML = stringa;
+	var elem = document.getElementById('attività');
+	if(elem != null) elem.innerHTML = stringa;
 }
 
 async function RicaricaPagina(msg)
 {
-    const throbber = '<img alt="🔄" width="25" height="25" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOiBhdXRvOyBiYWNrZ3JvdW5kOiBub25lOyBkaXNwbGF5OiBibG9jazsgc2hhcGUtcmVuZGVyaW5nOiBhdXRvOyIgd2lkdGg9IjIwMHB4IiBoZWlnaHQ9IjIwMHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPgo8Zz4KICA8cGF0aCBkPSJNNTAgMjJBMjggMjggMCAxIDAgNzUuODY4NjI2OTEwMzE2MDIgMzkuMjg0ODYzODkzNzc3NDg0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzNzg4ZDgiIHN0cm9rZS13aWR0aD0iMjAiPjwvcGF0aD4KICA8cGF0aCBkPSJNNDkgLTNMNDkgNDdMNzQgMjJMNDkgLTMiIGZpbGw9IiMzNzg4ZDgiPjwvcGF0aD4KICA8YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIHZhbHVlcz0iMCA1MCA1MDszNjAgNTAgNTAiIGtleVRpbWVzPSIwOzEiPjwvYW5pbWF0ZVRyYW5zZm9ybT4KPC9nPgo8IS0tIFtsZGlvXSBnZW5lcmF0ZWQgYnkgaHR0cHM6Ly9sb2FkaW5nLmlvLyAtLT48L3N2Zz4=" />';
-    if(msg == null) Attività(throbber + 'Ricarico la pagina');
-    else Attività(throbber + msg + ': ricarico la pagina');
+	const throbber = '<img alt="🔄" width="25" height="25" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBzdHlsZT0ibWFyZ2luOiBhdXRvOyBiYWNrZ3JvdW5kOiBub25lOyBkaXNwbGF5OiBibG9jazsgc2hhcGUtcmVuZGVyaW5nOiBhdXRvOyIgd2lkdGg9IjIwMHB4IiBoZWlnaHQ9IjIwMHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQiPgo8Zz4KICA8cGF0aCBkPSJNNTAgMjJBMjggMjggMCAxIDAgNzUuODY4NjI2OTEwMzE2MDIgMzkuMjg0ODYzODkzNzc3NDg0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzNzg4ZDgiIHN0cm9rZS13aWR0aD0iMjAiPjwvcGF0aD4KICA8cGF0aCBkPSJNNDkgLTNMNDkgNDdMNzQgMjJMNDkgLTMiIGZpbGw9IiMzNzg4ZDgiPjwvcGF0aD4KICA8YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIGR1cj0iMXMiIHZhbHVlcz0iMCA1MCA1MDszNjAgNTAgNTAiIGtleVRpbWVzPSIwOzEiPjwvYW5pbWF0ZVRyYW5zZm9ybT4KPC9nPgo8IS0tIFtsZGlvXSBnZW5lcmF0ZWQgYnkgaHR0cHM6Ly9sb2FkaW5nLmlvLyAtLT48L3N2Zz4=" />';
+	if(msg == null) Attività(throbber + 'Ricarico la pagina');
+	else Attività(throbber + msg + ': ricarico la pagina');
 
-    // Ordina il refresh e cicla finché la pagina non si è ricaricata
-    while(true)
-    {
-        window.location.reload();
-        await sleep(30000);
-    }
+	// Ordina il refresh e cicla finché la pagina non si è ricaricata
+	while(true)
+	{
+		window.location.reload();
+		await sleep(30000);
+	}
 }
 
 function LampeggioSpia()
 {
-    var spia = document.getElementById('SpiaON');
-    if(spia != null)
-    {
-        if(spia.style.backgroundColor == 'firebrick') spia.style.backgroundColor = 'red';
-        else if(spia.style.backgroundColor == 'red') spia.style.backgroundColor = 'firebrick';
-    }
+	var spia = document.getElementById('SpiaON');
+	if(spia != null)
+	{
+		if(spia.style.backgroundColor == 'firebrick') spia.style.backgroundColor = 'red';
+		else if(spia.style.backgroundColor == 'red') spia.style.backgroundColor = 'firebrick';
+	}
 }
 
 async function ClickCasellaLezione(indice)
@@ -628,7 +660,7 @@ async function ClickCasellaLezione(indice)
 function ClickPrenotaNuoveLezioni()
 {
 	localStorage.setItem('PrenotaNuoveLezioni', document.getElementById('PrenotaNuoveLezioni').checked);
-    CalcolaProssimoRiavvio();
+	CalcolaProssimoRiavvio();
 }
 
 function CambiamentoFrequenza(ForzaLivello)
@@ -680,16 +712,16 @@ function CambiamentoFrequenza(ForzaLivello)
 
 function CambiamentoVisibilitàPagina()
 {
-    if(document.hidden)
-    {
-        if(TimerLampeggioSpia != null) { clearTimeout(TimerLampeggioSpia); TimerLampeggioSpia = null; }
-        if(TimerAggiornaCountdown != null) { clearTimeout(TimerAggiornaCountdown); TimerAggiornaCountdown = null; }
-    } else
-    {
-        LampeggioSpia();
-        if(TimerLampeggioSpia == null) TimerLampeggioSpia = setInterval(LampeggioSpia, 3000);
-        if(TimestampProssimoRiavvio != null) AttivaCountdownRefresh();
-    }
+	if(document.hidden)
+	{
+		if(TimerLampeggioSpia != null) { clearTimeout(TimerLampeggioSpia); TimerLampeggioSpia = null; }
+		if(TimerAggiornaCountdown != null) { clearTimeout(TimerAggiornaCountdown); TimerAggiornaCountdown = null; }
+	} else
+	{
+		LampeggioSpia();
+		if(TimerLampeggioSpia == null) TimerLampeggioSpia = setInterval(LampeggioSpia, 3000);
+		if(TimestampProssimoRiavvio != null) AttivaCountdownRefresh();
+	}
 }
 
 function GetFrequenzaControlliMinuti()
@@ -710,7 +742,7 @@ function GetFrequenzaControlliMinuti()
 
 function RestituisciElementoLezione(IndRiga)
 {
-    return document.querySelector('#calendar > div.fc-view-harness.fc-view-harness-passive > div > div > table > tbody > tr:nth-child(' + (IndRiga+1) + ')');
+	return document.querySelector('#calendar > div.fc-view-harness.fc-view-harness-passive > div > div > table > tbody > tr:nth-child(' + (IndRiga+1) + ')');
 }
 
 function GetLezione(DataCercata, OraCercata, InsegnamentoCercato)
@@ -741,51 +773,51 @@ function FormattaData(data)
 
 async function SpostatiAllaSettimanaGiusta(Data)
 {
-    var BottoneIndietro = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-prev-button.fc-button.fc-button-primary");
-    var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
+	var BottoneIndietro = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-prev-button.fc-button.fc-button-primary");
+	var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
 
-    const LunedìSettimanaCercata = RestituisciLunedìStessaSettimana(Data);
+	const LunedìSettimanaCercata = RestituisciLunedìStessaSettimana(Data);
 
-    var LunSettimanaVisualizzata = LunedìSettimanaVisualizzata();
+	var LunSettimanaVisualizzata = LunedìSettimanaVisualizzata();
 
-    while(!StessoGiornoMeseAnno(LunedìSettimanaCercata, LunSettimanaVisualizzata))
-    {
-        const differenza = LunedìSettimanaCercata.getTime() - LunSettimanaVisualizzata.getTime();
-        var nuovaData = new Date(LunSettimanaVisualizzata);
-        if(differenza > 0) { BottoneAvanti.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() + 7); }
-        else { BottoneIndietro.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() - 7); }
+	while(!StessoGiornoMeseAnno(LunedìSettimanaCercata, LunSettimanaVisualizzata))
+	{
+		const differenza = LunedìSettimanaCercata.getTime() - LunSettimanaVisualizzata.getTime();
+		var nuovaData = new Date(LunSettimanaVisualizzata);
+		if(differenza > 0) { BottoneAvanti.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() + 7); }
+		else { BottoneIndietro.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() - 7); }
 
-        LunSettimanaVisualizzata = nuovaData;
+		LunSettimanaVisualizzata = nuovaData;
 		await sleep(200);
-    }
+	}
 }
 
 function LunedìSettimanaVisualizzata()
 {
-    const StringaSettimana = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(2) > h2").innerHTML;
-    const StringaDomenica = StringaSettimana.split(' – ')[1];
-    const giorno = Number(StringaDomenica.split(' ')[1]);
-    const meseStringa = StringaDomenica.split(' ')[2];
-    const mese = DaNomeANumeroMese(meseStringa) - 1;
-    const anno = Number(StringaDomenica.split(' ')[3]);
+	const StringaSettimana = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(2) > h2").innerHTML;
+	const StringaDomenica = StringaSettimana.split(' – ')[1];
+	const giorno = Number(StringaDomenica.split(' ')[1]);
+	const meseStringa = StringaDomenica.split(' ')[2];
+	const mese = DaNomeANumeroMese(meseStringa) - 1;
+	const anno = Number(StringaDomenica.split(' ')[3]);
 
-    return new Date(anno, mese, giorno - 6, 0, 0, 0, 0);
+	return new Date(anno, mese, giorno - 6, 0, 0, 0, 0);
 }
 
 function RestituisciLunedìStessaSettimana(data)
 {
-    var GiorniDaSottrarre;
-    if(data.getDay() == 1) GiorniDaSottrarre = 0;
-    else if(data.getDay() == 2) GiorniDaSottrarre = 1;
-    else if(data.getDay() == 3) GiorniDaSottrarre = 2;
-    else if(data.getDay() == 4) GiorniDaSottrarre = 3;
-    else if(data.getDay() == 5) GiorniDaSottrarre = 4;
-    else if(data.getDay() == 6) GiorniDaSottrarre = 5;
-    else if(data.getDay() == 0) GiorniDaSottrarre = 6;
+	var GiorniDaSottrarre;
+	if(data.getDay() == 1) GiorniDaSottrarre = 0;
+	else if(data.getDay() == 2) GiorniDaSottrarre = 1;
+	else if(data.getDay() == 3) GiorniDaSottrarre = 2;
+	else if(data.getDay() == 4) GiorniDaSottrarre = 3;
+	else if(data.getDay() == 5) GiorniDaSottrarre = 4;
+	else if(data.getDay() == 6) GiorniDaSottrarre = 5;
+	else if(data.getDay() == 0) GiorniDaSottrarre = 6;
 
-    var retVal = new Date(data);
-    retVal.setDate(retVal.getDate() - GiorniDaSottrarre);
-    return retVal;
+	var retVal = new Date(data);
+	retVal.setDate(retVal.getDate() - GiorniDaSottrarre);
+	return retVal;
 }
 
 function StessoGiornoMeseAnno(Data1, Data2)
