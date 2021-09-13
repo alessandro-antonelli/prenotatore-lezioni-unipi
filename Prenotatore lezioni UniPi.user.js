@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prenotatore lezioni UniPi
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Prenota le lezioni in presenza dell'Università di Pisa sul portale Agenda Didattica
 // @author       Alessandro Antonelli
 // @match        https://agendadidattica.unipi.it/*
@@ -11,7 +11,7 @@
 // ==/UserScript==
 // Source code repository: https://github.com/alessandro-antonelli/prenotatore-lezioni-unipi
 
-const versione = '1.0';
+const versione = '1.1';
 
 var OraUltimoControllo;
 var ElencoLezioni = [];
@@ -21,7 +21,7 @@ var TimerTieniAggiornataDataRiavvio;
 var TimerAggiornaCountdown;
 var TimerLampeggioSpia;
 var PrenotazioniInCorso = 0;
-var RiconoscimentoClickManuali = true; //TODO
+var RiconoscimentoClickManuali = true;
 
 const SimboloInfo = '<img width="16" height="16" style="margin-right: 3px" alt="Info" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+CiAgPGNpcmNsZSBjeT0iMjQiIGN4PSIyNCIgcj0iMjMiIHN0cm9rZT0iIzAwMCIgZmlsbD0ibm9uZSIvPgogIDxjaXJjbGUgY3g9IjI0IiBjeT0iMTEuNiIgcj0iNC43Ii8+CiAgPHBhdGggZD0ibTE3LjQgMTguOHYyLjE1aDEuMTNjMi4yNiAwIDIuMjYgMS4zOCAyLjI2IDEuMzh2MTUuMXMwIDEuMzgtMi4yNiAxLjM4aC0xLjEzdjIuMDhoMTQuMnYtMi4wOGgtMS4xM2MtMi4yNiAwLTIuMjYtMS4zOC0yLjI2LTEuMzh2LTE4LjYiLz4KPC9zdmc+" />';
 
@@ -295,11 +295,9 @@ function CaricaImpostazioni()
 async function ElencaLezioni()
 {
 	var BottoneLista = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(3) > div > button.fc-listWeek-button.fc-button.fc-button-primary");
-	await BottoneLista.click();
-	var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
-	var BottoneOggi = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > button");
-	await BottoneOggi.click();
+	if(!BottoneLista.classList.contains('fc-button-active')) await BottoneLista.click();
 	await sleep(200);
+	await CambiaSettimana('oggi');
 
 	const rosso = 'rgb(220, 53, 69)';
 	//const giallo = 'rgb(255, 193, 7)';
@@ -376,8 +374,7 @@ async function ElencaLezioni()
 				}
 			}
 		}
-		await BottoneAvanti.click();
-		await sleep(200);
+		await CambiaSettimana('avanti');
 	}
 
 	ElencoLezioni = NuovoElencoLezioni;
@@ -424,8 +421,7 @@ async function ElencaLezioni()
 
 	if(ElencoLezioni.length == 0) ElemElencoLezioni.innerHTML = `<div style="text-align: center; font-size: 120%; padding: 8px"><div style="font-size: 300%; font-weight: bold; color: gray; font-family: helvetica">Ø</div>Non ho trovato lezioni nella tua agenda!</div>`;
 
-	BottoneOggi = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > button");
-	await BottoneOggi.click();
+	await CambiaSettimana('oggi');
 }
 
 async function EseguiPrenotazioni()
@@ -631,33 +627,35 @@ async function RicaricaPagina(msg)
 	}
 }
 
-async function AttendiCambiamentoContenutoAgenda()
+async function CambiaSettimana(direzione)
 {
-	const HashInizialeAgenda = HashStringa(document.querySelector("#calendar > div.fc-view-harness.fc-view-harness-passive").innerHTML);
-	alert(HashInizialeAgenda);
+	const SettimanaPreClick = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(2) > h2").innerHTML;
+	if(direzione == 'avanti')
+	{
+		var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
+		BottoneAvanti.click();
+	}
+	else if(direzione == 'indietro')
+	{
+		var BottoneIndietro = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-prev-button.fc-button.fc-button-primary");
+		BottoneIndietro.click();
+	}
+	else if(direzione == 'oggi')
+	{
+		if(StessoGiornoMeseAnno(RestituisciLunedìStessaSettimana(new Date()),
+			LunedìSettimanaVisualizzata())) return;
+		
+		var BottoneOggi = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > button");
+		BottoneOggi.click();
+	}
+
 	while(true)
 	{
-		const HashAttualeAgenda = HashStringa(document.querySelector("#calendar > div.fc-view-harness.fc-view-harness-passive").innerHTML);
-		alert(HashAttualeAgenda);
-		if(HashAttualeAgenda != HashInizialeAgenda) return;
-		else await sleep(5000);
+		const SettimanaPostClick = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(2) > h2").innerHTML;
+		const ContenutoAgenda = document.querySelector("#calendar > div.fc-view-harness.fc-view-harness-passive").innerHTML;
+		if(SettimanaPreClick != SettimanaPostClick && ContenutoAgenda != '') return;
+		else await sleep(50);
 	}
-}
-
-function HashStringa(str, seed = 0)
-{
-	//funzione di hash: cyrb53
-	//fonte: https://stackoverflow.com/posts/52171480/
-    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-    for (let i = 0, ch; i < str.length; i++)
-	{
-        ch = str.charCodeAt(i);
-        h1 = Math.imul(h1 ^ ch, 2654435761);
-        h2 = Math.imul(h2 ^ ch, 1597334677);
-    }
-    h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-    h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-    return 4294967296 * (2097151 & h2) + (h1>>>0);
 }
 
 function LampeggioSpia()
@@ -802,9 +800,6 @@ function FormattaData(data)
 
 async function SpostatiAllaSettimanaGiusta(Data)
 {
-	var BottoneIndietro = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-prev-button.fc-button.fc-button-primary");
-	var BottoneAvanti = document.querySelector("#calendar > div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr > div:nth-child(1) > div > button.fc-next-button.fc-button.fc-button-primary");
-
 	const LunedìSettimanaCercata = RestituisciLunedìStessaSettimana(Data);
 
 	var LunSettimanaVisualizzata = LunedìSettimanaVisualizzata();
@@ -813,11 +808,16 @@ async function SpostatiAllaSettimanaGiusta(Data)
 	{
 		const differenza = LunedìSettimanaCercata.getTime() - LunSettimanaVisualizzata.getTime();
 		var nuovaData = new Date(LunSettimanaVisualizzata);
-		if(differenza > 0) { BottoneAvanti.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() + 7); }
-		else { BottoneIndietro.click(); nuovaData.setDate(LunSettimanaVisualizzata.getDate() - 7); }
-
+		if(differenza > 0)
+		{
+			await CambiaSettimana('avanti');
+			nuovaData.setDate(LunSettimanaVisualizzata.getDate() + 7);
+		} else
+		{
+			await CambiaSettimana('indietro');
+			nuovaData.setDate(LunSettimanaVisualizzata.getDate() - 7);
+		}
 		LunSettimanaVisualizzata = nuovaData;
-		await sleep(200);
 	}
 }
 
